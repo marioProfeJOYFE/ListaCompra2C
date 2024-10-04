@@ -25,6 +25,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.MutableLiveData
@@ -96,17 +97,22 @@ class MainActivity : ComponentActivity() {
 private fun NavigationHost(modifier: Modifier = Modifier, navController: NavHostController, viewModel: ListasCompraViewModel) {
     NavHost(
         navController = navController,
-        startDestination = NavBarValues.HOME.destination,
+        startDestination = "listas",
         modifier = modifier
     ) {
-        composable(NavBarValues.HOME.destination) {
-            ListasView(viewModel = viewModel)
-            /*navigation(
-                route = "lista_compra_view",
-                startDestination = NavBarValues.HOME.destination
 
-            )*/
+        navigation(
+            startDestination = NavBarValues.HOME.destination,
+            route = "listas"
+        ){
+            composable(NavBarValues.HOME.destination) {
+                ListasView(viewModel = viewModel, navController = navController)
+            }
+            composable("lista_compra_view"){
+                Text("hola")
+            }
         }
+
 
         composable(NavBarValues.GUARDADOS.destination) {
             Text("hola")
@@ -117,12 +123,15 @@ private fun NavigationHost(modifier: Modifier = Modifier, navController: NavHost
 
 @SuppressLint("SimpleDateFormat")
 @Composable
-fun ListasView(modifier: Modifier = Modifier, viewModel: ListasCompraViewModel) {
+fun ListasView(modifier: Modifier = Modifier, viewModel: ListasCompraViewModel, navController: NavHostController) {
     val listas = getListFromViewModel(viewModel)
     Column(modifier = modifier.fillMaxSize().padding(16.dp)){
         listas.forEach { lista ->
             Card(
                 modifier = Modifier.padding(bottom = 16.dp).fillMaxWidth().height(100.dp),
+                onClick = {
+                    navController.navigate("lista_compra_view")
+                }
             ) {
                 Column(
                     modifier = Modifier.padding(16.dp).fillMaxSize(),
@@ -135,10 +144,15 @@ fun ListasView(modifier: Modifier = Modifier, viewModel: ListasCompraViewModel) 
             }
         }
     }
-
-
-
 }
+
+@Preview
+@Composable
+fun ListasViewPreview() {
+    val viewModel = ListasCompraViewModel()
+    //ListasView(viewModel = viewModel)
+}
+
 
 
 
