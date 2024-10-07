@@ -29,6 +29,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.MutableLiveData
+import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -41,6 +42,7 @@ import java.text.SimpleDateFormat
 import java.time.Instant
 
 class MainActivity : ComponentActivity() {
+    val idListSelected: Int = 0
     @OptIn(ExperimentalMaterial3Api::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -65,13 +67,13 @@ class MainActivity : ComponentActivity() {
                         )
                     },
                     bottomBar = {
-                        NavigationBar () {
+                        NavigationBar {
                             itemsNavBar.forEach { item ->
                                 NavigationBarItem(
-                                    selected = item.name == navBackStackEntry.value?.destination?.route,
+                                    selected = navBackStackEntry.value?.destination?.hierarchy?.any { it.route == item.main_route } == true,
                                     onClick = { navController.navigate(item.destination) },
                                     icon = {
-                                        Icon(item.icon,"")
+                                        item.icon?.let { Icon(it,"") }
                                     },
                                     label = {
                                         Text(text = item.label ?: "")
@@ -109,7 +111,7 @@ private fun NavigationHost(modifier: Modifier = Modifier, navController: NavHost
                 ListasView(viewModel = viewModel, navController = navController)
             }
             composable("lista_compra_view"){
-                Text("hola")
+                //TODO ListaCompraView(navController = navController, viewModel = viewModel, lista = )
             }
         }
 
@@ -153,6 +155,21 @@ fun ListasViewPreview() {
     //ListasView(viewModel = viewModel)
 }
 
+@Composable
+fun ListaCompraView(
+    modifier: Modifier = Modifier,
+    navController: NavHostController,
+    viewModel: ListasCompraViewModel,
+    lista: ListaCompra
+){
+    lista.productos.forEach{ producto ->
+        Column {
+            Text(text = producto.nombre)
+            Text(text = producto.precio.toString())
+            Text(text = producto.cantidad.toString())
+        }
+    }
+}
 
 
 

@@ -6,18 +6,25 @@ import androidx.compose.material.icons.filled.Home
 import androidx.compose.ui.graphics.vector.ImageVector
 
 enum class NavBarValues(
-    val icon: ImageVector,
+    val icon: ImageVector? = null,
     val label: String? = null,
-    val destination: String
+    val destination: String,
+    val main_route: String
 ){
     HOME(
         icon = Icons.Filled.Home,
         label = "Inicio",
-        destination = "home_view"
+        destination = "home_view",
+        main_route = "listas"
+    ),
+    LISTAS(
+        destination = "lista_compra_view",
+        main_route = "listas"
     ),
     GUARDADOS(
         icon = Icons.Filled.Favorite,
         label = "Guardados",
-        destination = "guardados_view"
+        destination = "guardados_view",
+        main_route = "guardados_view"
     )
 }
