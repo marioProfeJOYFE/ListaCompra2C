@@ -110,8 +110,16 @@ private fun NavigationHost(modifier: Modifier = Modifier, navController: NavHost
             composable(NavBarValues.HOME.destination) {
                 ListasView(viewModel = viewModel, navController = navController)
             }
-            composable("lista_compra_view"){
-                //TODO ListaCompraView(navController = navController, viewModel = viewModel, lista = )
+            composable("lista_compra_view/{posicion}"){ direccion ->
+                // Obtenemos el valor de la posición de la lista, pasado como {posicion}
+                val posicion = direccion.arguments?.getInt("posicion")
+                // Al existir la posibilidad de que venga null, tenemos que escribir estas lineas para
+                // evitar errores
+                posicion?.let {
+                    getListFromViewModel(viewModel).get(
+                        it
+                    )
+                }?.let { ListaCompraView(modifier = modifier, navController = navController, viewModel = viewModel, lista = it) }
             }
         }
 
@@ -132,7 +140,7 @@ fun ListasView(modifier: Modifier = Modifier, viewModel: ListasCompraViewModel, 
             Card(
                 modifier = Modifier.padding(bottom = 16.dp).fillMaxWidth().height(100.dp),
                 onClick = {
-                    navController.navigate("lista_compra_view")
+                    navController.navigate("lista_compra_view/" + listas.indexOf(lista))
                 }
             ) {
                 Column(
@@ -162,13 +170,15 @@ fun ListaCompraView(
     viewModel: ListasCompraViewModel,
     lista: ListaCompra
 ){
-    lista.productos.forEach{ producto ->
-        Column {
+    Column {
+        lista.productos.forEach{ producto ->
             Text(text = producto.nombre)
             Text(text = producto.precio.toString())
             Text(text = producto.cantidad.toString())
+
         }
     }
+
 }
 
 
