@@ -7,13 +7,19 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -43,6 +49,7 @@ import java.time.Instant
 
 class MainActivity : ComponentActivity() {
     val idListSelected: Int = 0
+
     @OptIn(ExperimentalMaterial3Api::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -63,7 +70,18 @@ class MainActivity : ComponentActivity() {
                             colors = TopAppBarDefaults.topAppBarColors(
                                 containerColor = MaterialTheme.colorScheme.primaryContainer,
                                 titleContentColor = MaterialTheme.colorScheme.primary
-                            )
+                            ),
+                            navigationIcon = {
+                                if (navBackStackEntry.value?.destination?.route != NavBarValues.HOME.destination && navBackStackEntry.value?.destination?.route != NavBarValues.GUARDADOS.destination) {
+                                    IconButton(onClick = { navController.popBackStack() }) {
+                                        Icon(
+                                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                            contentDescription = ""
+                                        )
+                                    }
+                                }
+
+                            }
                         )
                     },
                     bottomBar = {
@@ -73,12 +91,20 @@ class MainActivity : ComponentActivity() {
                                     selected = navBackStackEntry.value?.destination?.hierarchy?.any { it.route == item.main_route } == true,
                                     onClick = { navController.navigate(item.destination) },
                                     icon = {
-                                        item.icon?.let { Icon(it,"") }
+                                        item.icon?.let { Icon(it, "") }
                                     },
                                     label = {
                                         Text(text = item.label ?: "")
                                     }
                                 )
+                            }
+                        }
+
+                    },
+                    floatingActionButton = {
+                        if(navBackStackEntry.value?.destination?.route == NavBarValues.LISTAS.destination) {
+                            FloatingActionButton(onClick = { }) {
+                                Icon(Icons.Filled.Add, "")
                             }
                         }
 
@@ -96,7 +122,11 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-private fun NavigationHost(modifier: Modifier = Modifier, navController: NavHostController, viewModel: ListasCompraViewModel) {
+private fun NavigationHost(
+    modifier: Modifier = Modifier,
+    navController: NavHostController,
+    viewModel: ListasCompraViewModel
+) {
     NavHost(
         navController = navController,
         startDestination = "listas",
@@ -106,11 +136,11 @@ private fun NavigationHost(modifier: Modifier = Modifier, navController: NavHost
         navigation(
             startDestination = NavBarValues.HOME.destination,
             route = "listas"
-        ){
+        ) {
             composable(NavBarValues.HOME.destination) {
                 ListasView(viewModel = viewModel, navController = navController)
             }
-            composable("lista_compra_view/{posicion}"){ direccion ->
+            composable("lista_compra_view/{posicion}") { direccion ->
                 // Obtenemos el valor de la posición de la lista, pasado como {posicion}
                 val posicion = direccion.arguments?.getInt("posicion")
                 // Al existir la posibilidad de que venga null, tenemos que escribir estas lineas para
@@ -119,7 +149,13 @@ private fun NavigationHost(modifier: Modifier = Modifier, navController: NavHost
                     getListFromViewModel(viewModel).get(
                         it
                     )
-                }?.let { ListaCompraView(modifier = modifier, navController = navController, viewModel = viewModel, lista = it) }
+                }?.let {
+                    ListaCompraView(
+                        navController = navController,
+                        viewModel = viewModel,
+                        lista = it
+                    )
+                }
             }
         }
 
@@ -133,21 +169,34 @@ private fun NavigationHost(modifier: Modifier = Modifier, navController: NavHost
 
 @SuppressLint("SimpleDateFormat")
 @Composable
-fun ListasView(modifier: Modifier = Modifier, viewModel: ListasCompraViewModel, navController: NavHostController) {
+fun ListasView(
+    modifier: Modifier = Modifier,
+    viewModel: ListasCompraViewModel,
+    navController: NavHostController
+) {
     val listas = getListFromViewModel(viewModel)
-    Column(modifier = modifier.fillMaxSize().padding(16.dp)){
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .padding(16.dp)
+    ) {
         listas.forEach { lista ->
             Card(
-                modifier = Modifier.padding(bottom = 16.dp).fillMaxWidth().height(100.dp),
+                modifier = Modifier
+                    .padding(bottom = 16.dp)
+                    .fillMaxWidth()
+                    .height(100.dp),
                 onClick = {
                     navController.navigate("lista_compra_view/" + listas.indexOf(lista))
                 }
             ) {
                 Column(
-                    modifier = Modifier.padding(16.dp).fillMaxSize(),
+                    modifier = Modifier
+                        .padding(16.dp)
+                        .fillMaxSize(),
                     horizontalAlignment = Alignment.Start,
                     verticalArrangement = Arrangement.Center
-                ){
+                ) {
                     Text(text = lista.nombre, fontSize = 18.sp, fontWeight = FontWeight.ExtraBold)
                     Text(text = "Creado el: " + SimpleDateFormat("dd/MM/yyyy").format(lista.dia_creacion))
                 }
@@ -169,28 +218,50 @@ fun ListaCompraView(
     navController: NavHostController,
     viewModel: ListasCompraViewModel,
     lista: ListaCompra
-){
-    Column {
-        lista.productos.forEach{ producto ->
-            Text(text = producto.nombre)
-            Text(text = producto.precio.toString())
-            Text(text = producto.cantidad.toString())
-
+) {
+    Column(modifier = modifier) {
+        lista.productos.forEach { producto ->
+            ProductoCard(producto = producto)
         }
     }
 
 }
 
+@Composable
+fun ProductoCard(producto: Producto) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(start = 10.dp, top = 8.dp, bottom = 8.dp, end = 10.dp)
+            .height(100.dp)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxSize(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(modifier = Modifier.padding(start = 10.dp)) {
+                Text(text = producto.nombre, fontSize = 18.sp, fontWeight = FontWeight.ExtraBold)
+                Text(text = "Cantidad: " + producto.cantidad.toString())
+            }
+            Text(
+                text = "Precio: " + producto.precio.toString() + "€",
+                modifier = Modifier.padding(end = 10.dp),
+                fontWeight = FontWeight.Bold
+            )
+        }
+    }
+}
 
 
 fun cargarListas(): ArrayList<ListaCompra> {
     val listas = ArrayList<ListaCompra>()
     val productos = listOf(
         Producto(
-        nombre = "Manzanas",
-        precio = 1.99,
-        cantidad = 5,
-        categoria = "Frutas"
+            nombre = "Manzanas",
+            precio = 1.99,
+            cantidad = 5,
+            categoria = "Frutas"
         ),
         Producto(
             nombre = "Pan",
@@ -216,7 +287,7 @@ fun cargarListas(): ArrayList<ListaCompra> {
 }
 
 fun getListFromViewModel(viewModel: ListasCompraViewModel): ArrayList<ListaCompra> {
-    if(viewModel.listas.value === null){
+    if (viewModel.listas.value === null) {
         viewModel.listas = MutableLiveData(cargarListas())
     }
 

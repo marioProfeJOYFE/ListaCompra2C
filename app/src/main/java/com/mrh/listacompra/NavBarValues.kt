@@ -18,7 +18,7 @@ enum class NavBarValues(
         main_route = "listas"
     ),
     LISTAS(
-        destination = "lista_compra_view",
+        destination = "lista_compra_view/{posicion}",
         main_route = "listas"
     ),
     GUARDADOS(
