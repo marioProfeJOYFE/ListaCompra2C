@@ -21,6 +21,10 @@ enum class NavBarValues(
         destination = "lista_compra_view/{posicion}",
         main_route = "listas"
     ),
+    FORMULARIO_PRODUCTO(
+        destination = "formulario_producto_view/{posicion}",
+        main_route = "listas"
+    ),
     GUARDADOS(
         icon = Icons.Filled.Favorite,
         label = "Guardados",

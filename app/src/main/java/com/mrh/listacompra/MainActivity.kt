@@ -15,19 +15,27 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -48,7 +56,6 @@ import java.text.SimpleDateFormat
 import java.time.Instant
 
 class MainActivity : ComponentActivity() {
-    val idListSelected: Int = 0
 
     @OptIn(ExperimentalMaterial3Api::class)
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -102,12 +109,15 @@ class MainActivity : ComponentActivity() {
 
                     },
                     floatingActionButton = {
-                        if(navBackStackEntry.value?.destination?.route == NavBarValues.LISTAS.destination) {
-                            FloatingActionButton(onClick = { }) {
+                        if (navBackStackEntry.value?.destination?.route == NavBarValues.HOME.destination) {
+                            FloatingActionButton(
+                                onClick = {
+                                    // TODO: Ir a formulario de lista nueva navController.navigate(NavBarValues.FORMULARIO_PRODUCTO.destination)
+                                }
+                            ) {
                                 Icon(Icons.Filled.Add, "")
                             }
                         }
-
                     }
                 ) { innerPadding ->
                     NavigationHost(
@@ -140,7 +150,7 @@ private fun NavigationHost(
             composable(NavBarValues.HOME.destination) {
                 ListasView(viewModel = viewModel, navController = navController)
             }
-            composable("lista_compra_view/{posicion}") { direccion ->
+            composable(NavBarValues.LISTAS.destination) { direccion ->
                 // Obtenemos el valor de la posición de la lista, pasado como {posicion}
                 val posicion = direccion.arguments?.getInt("posicion")
                 // Al existir la posibilidad de que venga null, tenemos que escribir estas lineas para
@@ -156,6 +166,10 @@ private fun NavigationHost(
                         lista = it
                     )
                 }
+            }
+            composable(NavBarValues.FORMULARIO_PRODUCTO.destination) { direccion ->
+                val posicion = direccion.arguments!!.getInt("posicion")
+                FormularioProductoView(navController = navController, viewModel = viewModel, id = posicion)
             }
         }
 
@@ -174,16 +188,27 @@ fun ListasView(
     viewModel: ListasCompraViewModel,
     navController: NavHostController
 ) {
+    var busqueda by remember { mutableStateOf("") }
     val listas = getListFromViewModel(viewModel)
     Column(
         modifier = modifier
             .fillMaxSize()
-            .padding(16.dp)
+            .padding(16.dp),
+        verticalArrangement = Arrangement.Top,
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        listas.forEach { lista ->
+        TextField(
+            value = busqueda,
+            onValueChange = {
+                busqueda = it
+            },
+            label = { Text("Buscar lista") },
+            modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)
+        )
+        listas.filter { lista -> lista.nombre.uppercase().contains(busqueda.uppercase()) }.forEach { lista ->
             Card(
                 modifier = Modifier
-                    .padding(bottom = 16.dp)
+                    .padding(top = 8.dp, bottom = 8.dp)
                     .fillMaxWidth()
                     .height(100.dp),
                 onClick = {
@@ -205,13 +230,6 @@ fun ListasView(
     }
 }
 
-@Preview
-@Composable
-fun ListasViewPreview() {
-    val viewModel = ListasCompraViewModel()
-    //ListasView(viewModel = viewModel)
-}
-
 @Composable
 fun ListaCompraView(
     modifier: Modifier = Modifier,
@@ -219,8 +237,27 @@ fun ListaCompraView(
     viewModel: ListasCompraViewModel,
     lista: ListaCompra
 ) {
-    Column(modifier = modifier) {
-        lista.productos.forEach { producto ->
+    var busqueda by remember { mutableStateOf("") }
+    Column(modifier = modifier.fillMaxSize().padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+        TextField(
+            value = busqueda,
+            onValueChange = {
+                busqueda = it
+            },
+            label = { Text("Buscar lista") },
+            modifier = Modifier.fillMaxWidth().padding(bottom = 18.dp)
+        )
+        FilledTonalButton(
+            onClick = {
+                navController.navigate(NavBarValues.FORMULARIO_PRODUCTO.destination.replace(oldValue = "{posicion}", newValue = getListFromViewModel(viewModel).indexOf(lista)
+                    .toString()))
+            },
+            modifier = Modifier.padding(8.dp).height(60.dp)
+        ) {
+            Icon(imageVector = Icons.Filled.Add, contentDescription = "")
+            Text(text = "Añadir lista")
+        }
+        lista.productos.filter { producto -> producto.nombre.uppercase().contains(busqueda.uppercase()) }.forEach { producto ->
             ProductoCard(producto = producto)
         }
     }
@@ -250,6 +287,21 @@ fun ProductoCard(producto: Producto) {
                 fontWeight = FontWeight.Bold
             )
         }
+    }
+}
+
+@Composable
+fun FormularioProductoView(navController: NavHostController, viewModel: ListasCompraViewModel, id: Int){
+
+    Column(
+        modifier = Modifier.fillMaxSize()
+    ) {
+        TextField(
+            value = "",
+            onValueChange = {},
+            label = { Text("Nombre") }
+        )
+
     }
 }
 
