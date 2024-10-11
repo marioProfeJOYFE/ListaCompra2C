@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
@@ -294,13 +295,29 @@ fun ProductoCard(producto: Producto) {
 fun FormularioProductoView(navController: NavHostController, viewModel: ListasCompraViewModel, id: Int){
 
     Column(
-        modifier = Modifier.fillMaxSize()
+        modifier = Modifier.fillMaxSize(),
+        verticalArrangement = Arrangement.Top,
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        TextField(
-            value = "",
-            onValueChange = {},
-            label = { Text("Nombre") }
-        )
+        Row(modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
+            horizontalArrangement = Arrangement.SpaceAround){
+            TextField(
+                value = "",
+                onValueChange = {},
+                label = { Text("Nombre") },
+                modifier = Modifier.width(180.dp)
+            )
+            TextField(
+                value = "",
+                onValueChange = {},
+                label = { Text("Precio") },
+                modifier = Modifier.width(180.dp),
+                suffix = {
+                    Text("€")
+                }
+            )
+        }
+
 
     }
 }
