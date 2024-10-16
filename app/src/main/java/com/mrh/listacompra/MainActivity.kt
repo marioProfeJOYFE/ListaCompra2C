@@ -13,11 +13,16 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.FloatingActionButton
@@ -34,15 +39,24 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableDoubleStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.unit.toSize
 import androidx.lifecycle.MutableLiveData
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavHostController
@@ -170,7 +184,11 @@ private fun NavigationHost(
             }
             composable(NavBarValues.FORMULARIO_PRODUCTO.destination) { direccion ->
                 val posicion = direccion.arguments!!.getInt("posicion")
-                FormularioProductoView(navController = navController, viewModel = viewModel, id = posicion)
+                FormularioProductoView(
+                    navController = navController,
+                    viewModel = viewModel,
+                    id = posicion
+                )
             }
         }
 
@@ -204,30 +222,37 @@ fun ListasView(
                 busqueda = it
             },
             label = { Text("Buscar lista") },
-            modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 8.dp)
         )
-        listas.filter { lista -> lista.nombre.uppercase().contains(busqueda.uppercase()) }.forEach { lista ->
-            Card(
-                modifier = Modifier
-                    .padding(top = 8.dp, bottom = 8.dp)
-                    .fillMaxWidth()
-                    .height(100.dp),
-                onClick = {
-                    navController.navigate("lista_compra_view/" + listas.indexOf(lista))
-                }
-            ) {
-                Column(
+        listas.filter { lista -> lista.nombre.uppercase().contains(busqueda.uppercase()) }
+            .forEach { lista ->
+                Card(
                     modifier = Modifier
-                        .padding(16.dp)
-                        .fillMaxSize(),
-                    horizontalAlignment = Alignment.Start,
-                    verticalArrangement = Arrangement.Center
+                        .padding(top = 8.dp, bottom = 8.dp)
+                        .fillMaxWidth()
+                        .height(100.dp),
+                    onClick = {
+                        navController.navigate("lista_compra_view/" + listas.indexOf(lista))
+                    }
                 ) {
-                    Text(text = lista.nombre, fontSize = 18.sp, fontWeight = FontWeight.ExtraBold)
-                    Text(text = "Creado el: " + SimpleDateFormat("dd/MM/yyyy").format(lista.dia_creacion))
+                    Column(
+                        modifier = Modifier
+                            .padding(16.dp)
+                            .fillMaxSize(),
+                        horizontalAlignment = Alignment.Start,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        Text(
+                            text = lista.nombre,
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.ExtraBold
+                        )
+                        Text(text = "Creado el: " + SimpleDateFormat("dd/MM/yyyy").format(lista.dia_creacion))
+                    }
                 }
             }
-        }
     }
 }
 
@@ -239,26 +264,42 @@ fun ListaCompraView(
     lista: ListaCompra
 ) {
     var busqueda by remember { mutableStateOf("") }
-    Column(modifier = modifier.fillMaxSize().padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .padding(16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
         TextField(
             value = busqueda,
             onValueChange = {
                 busqueda = it
             },
             label = { Text("Buscar lista") },
-            modifier = Modifier.fillMaxWidth().padding(bottom = 18.dp)
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 18.dp)
         )
         FilledTonalButton(
             onClick = {
-                navController.navigate(NavBarValues.FORMULARIO_PRODUCTO.destination.replace(oldValue = "{posicion}", newValue = getListFromViewModel(viewModel).indexOf(lista)
-                    .toString()))
+                navController.navigate(
+                    NavBarValues.FORMULARIO_PRODUCTO.destination.replace(
+                        oldValue = "{posicion}",
+                        newValue = getListFromViewModel(viewModel).indexOf(lista)
+                            .toString()
+                    )
+                )
             },
-            modifier = Modifier.padding(8.dp).height(60.dp)
+            modifier = Modifier
+                .padding(8.dp)
+                .height(60.dp)
         ) {
             Icon(imageVector = Icons.Filled.Add, contentDescription = "")
             Text(text = "Añadir lista")
         }
-        lista.productos.filter { producto -> producto.nombre.uppercase().contains(busqueda.uppercase()) }.forEach { producto ->
+        lista.productos.filter { producto ->
+            producto.nombre.uppercase().contains(busqueda.uppercase())
+        }.forEach { producto ->
             ProductoCard(producto = producto)
         }
     }
@@ -267,6 +308,7 @@ fun ListaCompraView(
 
 @Composable
 fun ProductoCard(producto: Producto) {
+    var comprado by remember { mutableStateOf(producto.comprado) }
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -278,46 +320,136 @@ fun ProductoCard(producto: Producto) {
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
+            Checkbox(
+                checked = comprado,
+                onCheckedChange = {
+                    producto.comprado = it
+                    comprado = it
+                }
+            )
             Column(modifier = Modifier.padding(start = 10.dp)) {
-                Text(text = producto.nombre, fontSize = 18.sp, fontWeight = FontWeight.ExtraBold)
-                Text(text = "Cantidad: " + producto.cantidad.toString())
+                Text(
+                    text = producto.nombre,
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.ExtraBold,
+                    textDecoration = if (comprado) TextDecoration.LineThrough else TextDecoration.None
+                )
+                Text(
+                    text = "Cantidad: " + producto.cantidad.toString(),
+                    textDecoration = if (comprado) TextDecoration.LineThrough else TextDecoration.None
+                )
             }
             Text(
                 text = "Precio: " + producto.precio.toString() + "€",
                 modifier = Modifier.padding(end = 10.dp),
-                fontWeight = FontWeight.Bold
+                fontWeight = FontWeight.Bold,
+                textDecoration = if (comprado) TextDecoration.LineThrough else TextDecoration.None
             )
         }
     }
 }
 
 @Composable
-fun FormularioProductoView(navController: NavHostController, viewModel: ListasCompraViewModel, id: Int){
+fun FormularioProductoView(
+    navController: NavHostController,
+    viewModel: ListasCompraViewModel,
+    id: Int
+) {
+
+    var nombre by remember { mutableStateOf("") }
+    var precio by remember { mutableStateOf("") }
+    var cantidad by remember { mutableStateOf("") }
+    var categoria by remember { mutableStateOf("") }
+    var mostrarLista by remember { mutableStateOf(false) }
+    var mTextFieldSize by remember { mutableStateOf(Size.Zero)}
+    val listaCategoria: List<String> = listOf("Fruteria", "Charcuteria", "Polleria", "Pescaderia")
 
     Column(
         modifier = Modifier.fillMaxSize(),
         verticalArrangement = Arrangement.Top,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Row(modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
-            horizontalArrangement = Arrangement.SpaceAround){
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 16.dp),
+            horizontalArrangement = Arrangement.SpaceAround
+        ) {
             TextField(
-                value = "",
-                onValueChange = {},
+                value = nombre,
+                onValueChange = {
+                    nombre = it
+                },
                 label = { Text("Nombre") },
                 modifier = Modifier.width(180.dp)
             )
             TextField(
-                value = "",
-                onValueChange = {},
+                value = precio,
+                onValueChange = {
+                    precio = it
+                },
                 label = { Text("Precio") },
                 modifier = Modifier.width(180.dp),
                 suffix = {
                     Text("€")
-                }
+                },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
             )
         }
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 16.dp),
+            horizontalArrangement = Arrangement.SpaceAround
+        ) {
+            TextField(
+                value = cantidad,
+                onValueChange = {
+                    cantidad = it
+                },
+                label = { Text("Cantidad") },
+                modifier = Modifier.width(180.dp)
+            )
+            TextField(
+                value = categoria,
+                readOnly = true,
+                onValueChange = {
+                    categoria = it
+                },
+                label = { Text("Precio") },
+                modifier = Modifier.width(180.dp).onGloballyPositioned { coordinates ->
+                    // This value is used to assign to
+                    // the DropDown the same width
+                    mTextFieldSize = coordinates.size.toSize()
+                },
+                trailingIcon = {
+                    IconButton(onClick = {
 
+                    }) {
+                        Icon(imageVector = Icons.Filled.ArrowDropDown, contentDescription = null)
+                    }
+                },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+            )
+            DropdownMenu(
+                expanded = mostrarLista,
+                onDismissRequest = { mostrarLista = false },
+                modifier = Modifier
+                    .width(with(LocalDensity.current){mTextFieldSize.width.toDp()})
+            ) {
+                listaCategoria.forEach { label ->
+                    DropdownMenuItem(
+                        onClick = {
+                            categoria = label
+                            mostrarLista = false
+                        },
+                        text = {
+                            Text(label)
+                        }
+                    )
+                }
+            }
+        }
 
     }
 }
