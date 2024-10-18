@@ -5,6 +5,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.gestures.scrollable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -13,11 +14,14 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.Checkbox
@@ -47,6 +51,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
@@ -167,23 +172,16 @@ private fun NavigationHost(
             }
             composable(NavBarValues.LISTAS.destination) { direccion ->
                 // Obtenemos el valor de la posición de la lista, pasado como {posicion}
-                val posicion = direccion.arguments?.getInt("posicion")
-                // Al existir la posibilidad de que venga null, tenemos que escribir estas lineas para
-                // evitar errores
-                posicion?.let {
-                    getListFromViewModel(viewModel).get(
-                        it
-                    )
-                }?.let {
-                    ListaCompraView(
-                        navController = navController,
-                        viewModel = viewModel,
-                        lista = it
-                    )
-                }
+                val posicion = direccion.arguments!!.getString("posicion").toString().toInt()
+                val lista = getListFromViewModel(viewModel)[posicion]
+                ListaCompraView(
+                    navController = navController,
+                    viewModel = viewModel,
+                    lista = lista
+                )
             }
             composable(NavBarValues.FORMULARIO_PRODUCTO.destination) { direccion ->
-                val posicion = direccion.arguments!!.getInt("posicion")
+                val posicion = direccion.arguments!!.getString("posicion").toString().toInt()
                 FormularioProductoView(
                     navController = navController,
                     viewModel = viewModel,
@@ -267,6 +265,7 @@ fun ListaCompraView(
     Column(
         modifier = modifier
             .fillMaxSize()
+            .verticalScroll(rememberScrollState())
             .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
@@ -320,25 +319,28 @@ fun ProductoCard(producto: Producto) {
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Checkbox(
-                checked = comprado,
-                onCheckedChange = {
-                    producto.comprado = it
-                    comprado = it
+            Row(){
+                Checkbox(
+                    checked = comprado,
+                    onCheckedChange = {
+                        producto.comprado = it
+                        comprado = it
+                    }
+                )
+                Column(modifier = Modifier.padding(start = 10.dp)) {
+                    Text(
+                        text = producto.nombre,
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        textDecoration = if (comprado) TextDecoration.LineThrough else TextDecoration.None
+                    )
+                    Text(
+                        text = "Cantidad: " + producto.cantidad.toString(),
+                        textDecoration = if (comprado) TextDecoration.LineThrough else TextDecoration.None
+                    )
                 }
-            )
-            Column(modifier = Modifier.padding(start = 10.dp)) {
-                Text(
-                    text = producto.nombre,
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.ExtraBold,
-                    textDecoration = if (comprado) TextDecoration.LineThrough else TextDecoration.None
-                )
-                Text(
-                    text = "Cantidad: " + producto.cantidad.toString(),
-                    textDecoration = if (comprado) TextDecoration.LineThrough else TextDecoration.None
-                )
             }
+
             Text(
                 text = "Precio: " + producto.precio.toString() + "€",
                 modifier = Modifier.padding(end = 10.dp),
@@ -361,7 +363,7 @@ fun FormularioProductoView(
     var cantidad by remember { mutableStateOf("") }
     var categoria by remember { mutableStateOf("") }
     var mostrarLista by remember { mutableStateOf(false) }
-    var mTextFieldSize by remember { mutableStateOf(Size.Zero)}
+    var mTextFieldSize by remember { mutableStateOf(Size.Zero) }
     val listaCategoria: List<String> = listOf("Fruteria", "Charcuteria", "Polleria", "Pescaderia")
 
     Column(
@@ -410,49 +412,87 @@ fun FormularioProductoView(
                 label = { Text("Cantidad") },
                 modifier = Modifier.width(180.dp)
             )
-            TextField(
-                value = categoria,
-                readOnly = true,
-                onValueChange = {
-                    categoria = it
-                },
-                label = { Text("Precio") },
-                modifier = Modifier.width(180.dp).onGloballyPositioned { coordinates ->
-                    // This value is used to assign to
-                    // the DropDown the same width
-                    mTextFieldSize = coordinates.size.toSize()
-                },
-                trailingIcon = {
-                    IconButton(onClick = {
-
-                    }) {
-                        Icon(imageVector = Icons.Filled.ArrowDropDown, contentDescription = null)
-                    }
-                },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
-            )
-            DropdownMenu(
-                expanded = mostrarLista,
-                onDismissRequest = { mostrarLista = false },
-                modifier = Modifier
-                    .width(with(LocalDensity.current){mTextFieldSize.width.toDp()})
-            ) {
-                listaCategoria.forEach { label ->
-                    DropdownMenuItem(
-                        onClick = {
-                            categoria = label
-                            mostrarLista = false
+            Column(){
+                TextField(
+                    value = categoria,
+                    readOnly = true,
+                    onValueChange = {
+                        categoria = it
+                    },
+                    label = { Text("Categoria") },
+                    modifier = Modifier
+                        .width(180.dp)
+                        .onGloballyPositioned { coordinates ->
+                            // This value is used to assign to
+                            // the DropDown the same width
+                            mTextFieldSize = coordinates.size.toSize()
                         },
-                        text = {
-                            Text(label)
+                    trailingIcon = {
+                        IconButton(onClick = {
+                            mostrarLista = true
+                        }) {
+                            Icon(imageVector = Icons.Filled.ArrowDropDown, contentDescription = null)
                         }
-                    )
+                    },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                )
+                DropdownMenu(
+                    expanded = mostrarLista,
+                    onDismissRequest = { mostrarLista = false },
+                    modifier = Modifier
+                        .width(with(LocalDensity.current) { mTextFieldSize.width.toDp() })
+                ) {
+                    listaCategoria.forEach { label ->
+                        DropdownMenuItem(
+                            onClick = {
+                                categoria = label
+                                mostrarLista = false
+                            },
+                            text = {
+                                Text(label)
+                            }
+                        )
+                    }
                 }
             }
         }
-
+        Button(
+            onClick = {
+                val listas = getListFromViewModel(viewModel) as ArrayList<ListaCompra>
+                val lista = listas.get(id)
+                val productos = ArrayList(lista.productos)
+                productos.add(
+                    Producto(
+                        nombre = nombre,
+                        precio = precio.toDouble(),
+                        cantidad = cantidad.toInt(),
+                        categoria = categoria
+                    )
+                )
+                lista.productos = productos
+                navController.popBackStack()
+            },
+            modifier = Modifier.padding(top = 10.dp)
+        ){
+            Text("Añadir Producto")
+        }
     }
 }
+
+
+@Composable
+fun FormularioListaView(
+    navController: NavHostController,
+    viewModel: ListasCompraViewModel,
+){
+    val
+    Column {
+        TextField(
+
+        )
+    }
+}
+
 
 
 fun cargarListas(): ArrayList<ListaCompra> {
