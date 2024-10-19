@@ -5,7 +5,6 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.gestures.scrollable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -22,7 +21,6 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DropdownMenu
@@ -35,7 +33,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
@@ -43,22 +40,17 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableDoubleStateOf
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextDecoration
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.unit.toSize
@@ -132,7 +124,7 @@ class MainActivity : ComponentActivity() {
                         if (navBackStackEntry.value?.destination?.route == NavBarValues.HOME.destination) {
                             FloatingActionButton(
                                 onClick = {
-                                    // TODO: Ir a formulario de lista nueva navController.navigate(NavBarValues.FORMULARIO_PRODUCTO.destination)
+                                    navController.navigate(NavBarValues.FORMULARIO_LISTA.destination)
                                 }
                             ) {
                                 Icon(Icons.Filled.Add, "")
@@ -188,6 +180,13 @@ private fun NavigationHost(
                     id = posicion
                 )
             }
+
+            composable(NavBarValues.FORMULARIO_LISTA.destination) {
+                FormularioListaView(
+                    navController = navController,
+                    viewModel = viewModel
+                )
+            }
         }
 
 
@@ -201,14 +200,14 @@ private fun NavigationHost(
 @SuppressLint("SimpleDateFormat")
 @Composable
 fun ListasView(
-    modifier: Modifier = Modifier,
     viewModel: ListasCompraViewModel,
     navController: NavHostController
 ) {
     var busqueda by remember { mutableStateOf("") }
     val listas = getListFromViewModel(viewModel)
     Column(
-        modifier = modifier
+        modifier = Modifier
+            .verticalScroll(rememberScrollState())
             .fillMaxSize()
             .padding(16.dp),
         verticalArrangement = Arrangement.Top,
@@ -256,14 +255,13 @@ fun ListasView(
 
 @Composable
 fun ListaCompraView(
-    modifier: Modifier = Modifier,
     navController: NavHostController,
     viewModel: ListasCompraViewModel,
     lista: ListaCompra
 ) {
     var busqueda by remember { mutableStateOf("") }
     Column(
-        modifier = modifier
+        modifier = Modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
             .padding(16.dp),
@@ -311,7 +309,7 @@ fun ProductoCard(producto: Producto) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(start = 10.dp, top = 8.dp, bottom = 8.dp, end = 10.dp)
+            .padding(top = 8.dp, bottom = 8.dp)
             .height(100.dp)
     ) {
         Row(
@@ -319,7 +317,7 @@ fun ProductoCard(producto: Producto) {
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Row(){
+            Row{
                 Checkbox(
                     checked = comprado,
                     onCheckedChange = {
@@ -412,7 +410,7 @@ fun FormularioProductoView(
                 label = { Text("Cantidad") },
                 modifier = Modifier.width(180.dp)
             )
-            Column(){
+            Column {
                 TextField(
                     value = categoria,
                     readOnly = true,
@@ -431,7 +429,10 @@ fun FormularioProductoView(
                         IconButton(onClick = {
                             mostrarLista = true
                         }) {
-                            Icon(imageVector = Icons.Filled.ArrowDropDown, contentDescription = null)
+                            Icon(
+                                imageVector = Icons.Filled.ArrowDropDown,
+                                contentDescription = null
+                            )
                         }
                     },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
@@ -458,8 +459,8 @@ fun FormularioProductoView(
         }
         Button(
             onClick = {
-                val listas = getListFromViewModel(viewModel) as ArrayList<ListaCompra>
-                val lista = listas.get(id)
+                val listas = getListFromViewModel(viewModel)
+                val lista = listas[id]
                 val productos = ArrayList(lista.productos)
                 productos.add(
                     Producto(
@@ -473,7 +474,7 @@ fun FormularioProductoView(
                 navController.popBackStack()
             },
             modifier = Modifier.padding(top = 10.dp)
-        ){
+        ) {
             Text("Añadir Producto")
         }
     }
@@ -484,15 +485,41 @@ fun FormularioProductoView(
 fun FormularioListaView(
     navController: NavHostController,
     viewModel: ListasCompraViewModel,
-){
-    val
-    Column {
+) {
+    var nombre by remember { mutableStateOf("") }
+    Column(
+        Modifier
+            .fillMaxSize()
+            .padding(16.dp),
+        verticalArrangement = Arrangement.Top,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
         TextField(
-
+            value = nombre,
+            onValueChange = {
+                nombre = it
+            },
+            label = { Text("Nombre") }
         )
+        Button(
+            onClick = {
+                val listas = getListFromViewModel(viewModel)
+                listas.add(
+                    ListaCompra(
+                        nombre = nombre,
+                        dia_creacion = Date.from(Instant.now()),
+                        productos = ArrayList()
+                    )
+                )
+                viewModel.listas = MutableLiveData(listas)
+                navController.popBackStack()
+            },
+            modifier = Modifier.padding(top = 10.dp)
+        ) {
+            Text("Añadir Producto")
+        }
     }
 }
-
 
 
 fun cargarListas(): ArrayList<ListaCompra> {
