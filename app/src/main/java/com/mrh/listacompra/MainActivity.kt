@@ -141,424 +141,435 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
-}
 
-@Composable
-private fun NavigationHost(
-    modifier: Modifier = Modifier,
-    navController: NavHostController,
-    viewModel: ListasCompraViewModel
-) {
-    NavHost(
-        navController = navController,
-        startDestination = "listas",
-        modifier = modifier
+
+    @Composable
+    private fun NavigationHost(
+        modifier: Modifier = Modifier,
+        navController: NavHostController,
+        viewModel: ListasCompraViewModel
     ) {
-
-        navigation(
-            startDestination = NavBarValues.HOME.destination,
-            route = "listas"
+        NavHost(
+            navController = navController,
+            startDestination = "listas",
+            modifier = modifier
         ) {
-            composable(NavBarValues.HOME.destination) {
-                ListasView(viewModel = viewModel, navController = navController)
-            }
-            composable(NavBarValues.LISTAS.destination) { direccion ->
-                // Obtenemos el valor de la posición de la lista, pasado como {posicion}
-                val posicion = direccion.arguments!!.getString("posicion").toString().toInt()
-                val lista = getListFromViewModel(viewModel)[posicion]
-                ListaCompraView(
-                    navController = navController,
-                    viewModel = viewModel,
-                    lista = lista
-                )
-            }
-            composable(NavBarValues.FORMULARIO_PRODUCTO.destination) { direccion ->
-                val posicion = direccion.arguments!!.getString("posicion").toString().toInt()
-                FormularioProductoView(
-                    navController = navController,
-                    viewModel = viewModel,
-                    id = posicion
-                )
-            }
 
-            composable(NavBarValues.FORMULARIO_LISTA.destination) {
-                FormularioListaView(
-                    navController = navController,
-                    viewModel = viewModel
-                )
-            }
-        }
-
-
-        composable(NavBarValues.GUARDADOS.destination) {
-            Text("hola")
-        }
-
-    }
-}
-
-@SuppressLint("SimpleDateFormat")
-@Composable
-fun ListasView(
-    viewModel: ListasCompraViewModel,
-    navController: NavHostController
-) {
-    var busqueda by remember { mutableStateOf("") }
-    val listas = getListFromViewModel(viewModel)
-    Column(
-        modifier = Modifier
-            .verticalScroll(rememberScrollState())
-            .fillMaxSize()
-            .padding(16.dp),
-        verticalArrangement = Arrangement.Top,
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        TextField(
-            value = busqueda,
-            onValueChange = {
-                busqueda = it
-            },
-            label = { Text("Buscar lista") },
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 8.dp)
-        )
-        listas.filter { lista -> lista.nombre.uppercase().contains(busqueda.uppercase()) }
-            .forEach { lista ->
-                Card(
-                    modifier = Modifier
-                        .padding(top = 8.dp, bottom = 8.dp)
-                        .fillMaxWidth()
-                        .height(100.dp),
-                    onClick = {
-                        navController.navigate("lista_compra_view/" + listas.indexOf(lista))
-                    }
-                ) {
-                    Column(
-                        modifier = Modifier
-                            .padding(16.dp)
-                            .fillMaxSize(),
-                        horizontalAlignment = Alignment.Start,
-                        verticalArrangement = Arrangement.Center
-                    ) {
-                        Text(
-                            text = lista.nombre,
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight.ExtraBold
-                        )
-                        Text(text = "Creado el: " + SimpleDateFormat("dd/MM/yyyy").format(lista.dia_creacion))
-                    }
+            navigation(
+                startDestination = NavBarValues.HOME.destination,
+                route = "listas"
+            ) {
+                composable(NavBarValues.HOME.destination) {
+                    ListasView(viewModel = viewModel, navController = navController)
                 }
-            }
-    }
-}
-
-@Composable
-fun ListaCompraView(
-    navController: NavHostController,
-    viewModel: ListasCompraViewModel,
-    lista: ListaCompra
-) {
-    var busqueda by remember { mutableStateOf("") }
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        TextField(
-            value = busqueda,
-            onValueChange = {
-                busqueda = it
-            },
-            label = { Text("Buscar lista") },
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 18.dp)
-        )
-        FilledTonalButton(
-            onClick = {
-                navController.navigate(
-                    NavBarValues.FORMULARIO_PRODUCTO.destination.replace(
-                        oldValue = "{posicion}",
-                        newValue = getListFromViewModel(viewModel).indexOf(lista)
-                            .toString()
+                composable(NavBarValues.LISTAS.destination) { direccion ->
+                    // Obtenemos el valor de la posición de la lista, pasado como {posicion}
+                    val posicion = direccion.arguments!!.getString("posicion").toString().toInt()
+                    val lista = getListFromViewModel(viewModel)[posicion]
+                    ListaCompraView(
+                        navController = navController,
+                        viewModel = viewModel,
+                        lista = lista
                     )
-                )
-            },
-            modifier = Modifier
-                .padding(8.dp)
-                .height(60.dp)
-        ) {
-            Icon(imageVector = Icons.Filled.Add, contentDescription = "")
-            Text(text = "Añadir lista")
-        }
-        lista.productos.filter { producto ->
-            producto.nombre.uppercase().contains(busqueda.uppercase())
-        }.forEach { producto ->
-            ProductoCard(producto = producto)
-        }
-    }
-
-}
-
-@Composable
-fun ProductoCard(producto: Producto) {
-    var comprado by remember { mutableStateOf(producto.comprado) }
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(top = 8.dp, bottom = 8.dp)
-            .height(100.dp)
-    ) {
-        Row(
-            modifier = Modifier.fillMaxSize(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Row{
-                Checkbox(
-                    checked = comprado,
-                    onCheckedChange = {
-                        producto.comprado = it
-                        comprado = it
-                    }
-                )
-                Column(modifier = Modifier.padding(start = 10.dp)) {
-                    Text(
-                        text = producto.nombre,
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.ExtraBold,
-                        textDecoration = if (comprado) TextDecoration.LineThrough else TextDecoration.None
+                }
+                composable(NavBarValues.FORMULARIO_PRODUCTO.destination) { direccion ->
+                    val posicion = direccion.arguments!!.getString("posicion").toString().toInt()
+                    FormularioProductoView(
+                        navController = navController,
+                        viewModel = viewModel,
+                        id = posicion
                     )
-                    Text(
-                        text = "Cantidad: " + producto.cantidad.toString(),
-                        textDecoration = if (comprado) TextDecoration.LineThrough else TextDecoration.None
+                }
+
+                composable(NavBarValues.FORMULARIO_LISTA.destination) {
+                    FormularioListaView(
+                        navController = navController,
+                        viewModel = viewModel
                     )
                 }
             }
 
-            Text(
-                text = "Precio: " + producto.precio.toString() + "€",
-                modifier = Modifier.padding(end = 10.dp),
-                fontWeight = FontWeight.Bold,
-                textDecoration = if (comprado) TextDecoration.LineThrough else TextDecoration.None
+
+            composable(NavBarValues.GUARDADOS.destination) {
+                Text("hola")
+            }
+
+        }
+    }
+
+    @SuppressLint("SimpleDateFormat")
+    @Composable
+    fun ListasView(
+        viewModel: ListasCompraViewModel,
+        navController: NavHostController
+    ) {
+        var busqueda by remember { mutableStateOf("") }
+        val listas = getListFromViewModel(viewModel)
+        Column(
+            modifier = Modifier
+                .verticalScroll(rememberScrollState())
+                .fillMaxSize()
+                .padding(16.dp),
+            verticalArrangement = Arrangement.Top,
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            TextField(
+                value = busqueda,
+                onValueChange = {
+                    busqueda = it
+                },
+                label = { Text("Buscar lista") },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 8.dp)
             )
+            if (listas.isEmpty()) {
+                Text("No hay listas")
+            } else {
+                listas.filter { lista -> lista.nombre.uppercase().contains(busqueda.uppercase()) }
+                    .forEach { lista ->
+                        Card(
+                            modifier = Modifier
+                                .padding(top = 8.dp, bottom = 8.dp)
+                                .fillMaxWidth()
+                                .height(100.dp),
+                            onClick = {
+                                navController.navigate("lista_compra_view/" + listas.indexOf(lista))
+                            }
+                        ) {
+                            Column(
+                                modifier = Modifier
+                                    .padding(16.dp)
+                                    .fillMaxSize(),
+                                horizontalAlignment = Alignment.Start,
+                                verticalArrangement = Arrangement.Center
+                            ) {
+                                Text(
+                                    text = lista.nombre,
+                                    fontSize = 18.sp,
+                                    fontWeight = FontWeight.ExtraBold
+                                )
+                                Text(
+                                    text = "Creado el: " + SimpleDateFormat("dd/MM/yyyy").format(
+                                        lista.dia_creacion
+                                    )
+                                )
+                            }
+                        }
+                    }
+            }
         }
     }
-}
 
-@Composable
-fun FormularioProductoView(
-    navController: NavHostController,
-    viewModel: ListasCompraViewModel,
-    id: Int
-) {
-
-    var nombre by remember { mutableStateOf("") }
-    var precio by remember { mutableStateOf("") }
-    var cantidad by remember { mutableStateOf("") }
-    var categoria by remember { mutableStateOf("") }
-    var mostrarLista by remember { mutableStateOf(false) }
-    var mTextFieldSize by remember { mutableStateOf(Size.Zero) }
-    val listaCategoria: List<String> = listOf("Fruteria", "Charcuteria", "Polleria", "Pescaderia")
-
-    Column(
-        modifier = Modifier.fillMaxSize(),
-        verticalArrangement = Arrangement.Top,
-        horizontalAlignment = Alignment.CenterHorizontally
+    @Composable
+    fun ListaCompraView(
+        navController: NavHostController,
+        viewModel: ListasCompraViewModel,
+        lista: ListaCompra
     ) {
-        Row(
+        var busqueda by remember { mutableStateOf("") }
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            TextField(
+                value = busqueda,
+                onValueChange = {
+                    busqueda = it
+                },
+                label = { Text("Buscar lista") },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 18.dp)
+            )
+            FilledTonalButton(
+                onClick = {
+                    navController.navigate(
+                        NavBarValues.FORMULARIO_PRODUCTO.destination.replace(
+                            oldValue = "{posicion}",
+                            newValue = getListFromViewModel(viewModel).indexOf(lista)
+                                .toString()
+                        )
+                    )
+                },
+                modifier = Modifier
+                    .padding(8.dp)
+                    .height(60.dp)
+            ) {
+                Icon(imageVector = Icons.Filled.Add, contentDescription = "")
+                Text(text = "Añadir lista")
+            }
+            lista.productos.filter { producto ->
+                producto.nombre.uppercase().contains(busqueda.uppercase())
+            }.forEach { producto ->
+                ProductoCard(producto = producto)
+            }
+        }
+
+    }
+
+    @Composable
+    fun ProductoCard(producto: Producto) {
+        var comprado by remember { mutableStateOf(producto.comprado) }
+        Card(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(top = 16.dp),
-            horizontalArrangement = Arrangement.SpaceAround
+                .padding(top = 8.dp, bottom = 8.dp)
+                .height(100.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxSize(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row {
+                    Checkbox(
+                        checked = comprado,
+                        onCheckedChange = {
+                            producto.comprado = it
+                            comprado = it
+                        }
+                    )
+                    Column(modifier = Modifier.padding(start = 10.dp)) {
+                        Text(
+                            text = producto.nombre,
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.ExtraBold,
+                            textDecoration = if (comprado) TextDecoration.LineThrough else TextDecoration.None
+                        )
+                        Text(
+                            text = "Cantidad: " + producto.cantidad.toString(),
+                            textDecoration = if (comprado) TextDecoration.LineThrough else TextDecoration.None
+                        )
+                    }
+                }
+
+                Text(
+                    text = "Precio: " + producto.precio.toString() + "€",
+                    modifier = Modifier.padding(end = 10.dp),
+                    fontWeight = FontWeight.Bold,
+                    textDecoration = if (comprado) TextDecoration.LineThrough else TextDecoration.None
+                )
+            }
+        }
+    }
+
+    @Composable
+    fun FormularioProductoView(
+        navController: NavHostController,
+        viewModel: ListasCompraViewModel,
+        id: Int
+    ) {
+
+        var nombre by remember { mutableStateOf("") }
+        var precio by remember { mutableStateOf("") }
+        var cantidad by remember { mutableStateOf("") }
+        var categoria by remember { mutableStateOf("") }
+        var mostrarLista by remember { mutableStateOf(false) }
+        var mTextFieldSize by remember { mutableStateOf(Size.Zero) }
+        val listaCategoria: List<String> =
+            listOf("Fruteria", "Charcuteria", "Polleria", "Pescaderia")
+
+        Column(
+            modifier = Modifier.fillMaxSize(),
+            verticalArrangement = Arrangement.Top,
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 16.dp),
+                horizontalArrangement = Arrangement.SpaceAround
+            ) {
+                TextField(
+                    value = nombre,
+                    onValueChange = {
+                        nombre = it
+                    },
+                    label = { Text("Nombre") },
+                    modifier = Modifier.width(180.dp)
+                )
+                TextField(
+                    value = precio,
+                    onValueChange = {
+                        precio = it
+                    },
+                    label = { Text("Precio") },
+                    modifier = Modifier.width(180.dp),
+                    suffix = {
+                        Text("€")
+                    },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                )
+            }
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 16.dp),
+                horizontalArrangement = Arrangement.SpaceAround
+            ) {
+                TextField(
+                    value = cantidad,
+                    onValueChange = {
+                        cantidad = it
+                    },
+                    label = { Text("Cantidad") },
+                    modifier = Modifier.width(180.dp)
+                )
+                Column {
+                    TextField(
+                        value = categoria,
+                        readOnly = true,
+                        onValueChange = {
+                            categoria = it
+                        },
+                        label = { Text("Categoria") },
+                        modifier = Modifier
+                            .width(180.dp)
+                            .onGloballyPositioned { coordinates ->
+                                // This value is used to assign to
+                                // the DropDown the same width
+                                mTextFieldSize = coordinates.size.toSize()
+                            },
+                        trailingIcon = {
+                            IconButton(onClick = {
+                                mostrarLista = true
+                            }) {
+                                Icon(
+                                    imageVector = Icons.Filled.ArrowDropDown,
+                                    contentDescription = null
+                                )
+                            }
+                        },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                    )
+                    DropdownMenu(
+                        expanded = mostrarLista,
+                        onDismissRequest = { mostrarLista = false },
+                        modifier = Modifier
+                            .width(with(LocalDensity.current) { mTextFieldSize.width.toDp() })
+                    ) {
+                        listaCategoria.forEach { label ->
+                            DropdownMenuItem(
+                                onClick = {
+                                    categoria = label
+                                    mostrarLista = false
+                                },
+                                text = {
+                                    Text(label)
+                                }
+                            )
+                        }
+                    }
+                }
+            }
+            Button(
+                onClick = {
+                    val listas = getListFromViewModel(viewModel)
+                    val lista = listas[id]
+                    val productos = ArrayList(lista.productos)
+                    productos.add(
+                        Producto(
+                            nombre = nombre,
+                            precio = precio.toDouble(),
+                            cantidad = cantidad.toInt(),
+                            categoria = categoria
+                        )
+                    )
+                    lista.productos = productos
+                    FileUtils.agregarProducto(this@MainActivity, lista, id)
+                    navController.popBackStack()
+                },
+                modifier = Modifier.padding(top = 10.dp)
+            ) {
+                Text("Añadir Producto")
+            }
+        }
+    }
+
+
+    @Composable
+    fun FormularioListaView(
+        navController: NavHostController,
+        viewModel: ListasCompraViewModel,
+    ) {
+        var nombre by remember { mutableStateOf("") }
+        Column(
+            Modifier
+                .fillMaxSize()
+                .padding(16.dp),
+            verticalArrangement = Arrangement.Top,
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
             TextField(
                 value = nombre,
                 onValueChange = {
                     nombre = it
                 },
-                label = { Text("Nombre") },
-                modifier = Modifier.width(180.dp)
+                label = { Text("Nombre") }
             )
-            TextField(
-                value = precio,
-                onValueChange = {
-                    precio = it
-                },
-                label = { Text("Precio") },
-                modifier = Modifier.width(180.dp),
-                suffix = {
-                    Text("€")
-                },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
-            )
-        }
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 16.dp),
-            horizontalArrangement = Arrangement.SpaceAround
-        ) {
-            TextField(
-                value = cantidad,
-                onValueChange = {
-                    cantidad = it
-                },
-                label = { Text("Cantidad") },
-                modifier = Modifier.width(180.dp)
-            )
-            Column {
-                TextField(
-                    value = categoria,
-                    readOnly = true,
-                    onValueChange = {
-                        categoria = it
-                    },
-                    label = { Text("Categoria") },
-                    modifier = Modifier
-                        .width(180.dp)
-                        .onGloballyPositioned { coordinates ->
-                            // This value is used to assign to
-                            // the DropDown the same width
-                            mTextFieldSize = coordinates.size.toSize()
-                        },
-                    trailingIcon = {
-                        IconButton(onClick = {
-                            mostrarLista = true
-                        }) {
-                            Icon(
-                                imageVector = Icons.Filled.ArrowDropDown,
-                                contentDescription = null
-                            )
-                        }
-                    },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
-                )
-                DropdownMenu(
-                    expanded = mostrarLista,
-                    onDismissRequest = { mostrarLista = false },
-                    modifier = Modifier
-                        .width(with(LocalDensity.current) { mTextFieldSize.width.toDp() })
-                ) {
-                    listaCategoria.forEach { label ->
-                        DropdownMenuItem(
-                            onClick = {
-                                categoria = label
-                                mostrarLista = false
-                            },
-                            text = {
-                                Text(label)
-                            }
+            Button(
+                onClick = {
+                    val listas = getListFromViewModel(viewModel)
+                    listas.add(
+                        ListaCompra(
+                            nombre = nombre,
+                            dia_creacion = Date.from(Instant.now()),
+                            productos = ArrayList()
                         )
-                    }
-                }
+                    )
+                    viewModel.listas = MutableLiveData(listas)
+                    FileUtils.agregarListaCompra(this@MainActivity, listas.last())
+                    navController.popBackStack()
+                },
+                modifier = Modifier.padding(top = 10.dp)
+            ) {
+                Text("Añadir Producto")
             }
         }
-        Button(
-            onClick = {
-                val listas = getListFromViewModel(viewModel)
-                val lista = listas[id]
-                val productos = ArrayList(lista.productos)
-                productos.add(
-                    Producto(
-                        nombre = nombre,
-                        precio = precio.toDouble(),
-                        cantidad = cantidad.toInt(),
-                        categoria = categoria
-                    )
-                )
-                lista.productos = productos
-                navController.popBackStack()
-            },
-            modifier = Modifier.padding(top = 10.dp)
-        ) {
-            Text("Añadir Producto")
+    }
+
+
+    fun cargarListas(): ArrayList<ListaCompra> {
+        val listas = ArrayList<ListaCompra>()
+        val productos = listOf(
+            Producto(
+                nombre = "Manzanas",
+                precio = 1.99,
+                cantidad = 5,
+                categoria = "Frutas"
+            ),
+            Producto(
+                nombre = "Pan",
+                precio = 0.99,
+                cantidad = 2,
+                categoria = "Panadería"
+            ),
+            Producto(
+                nombre = "Leche",
+                precio = 2.49,
+                cantidad = 1,
+                categoria = "Lácteos"
+            )
+        )
+        listas.add(
+            ListaCompra(
+                nombre = "Lista de la compra de la cena",
+                dia_creacion = Date.from(Instant.now()),
+                productos = productos
+            )
+        )
+        return listas
+    }
+
+    fun getListFromViewModel(viewModel: ListasCompraViewModel): ArrayList<ListaCompra> {
+        if (viewModel.listas.value === null) {
+            viewModel.listas = MutableLiveData(FileUtils.recuperarListasCompra(this))
         }
+
+        return viewModel.listas.value as ArrayList<ListaCompra>
     }
 }
-
-
-@Composable
-fun FormularioListaView(
-    navController: NavHostController,
-    viewModel: ListasCompraViewModel,
-) {
-    var nombre by remember { mutableStateOf("") }
-    Column(
-        Modifier
-            .fillMaxSize()
-            .padding(16.dp),
-        verticalArrangement = Arrangement.Top,
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        TextField(
-            value = nombre,
-            onValueChange = {
-                nombre = it
-            },
-            label = { Text("Nombre") }
-        )
-        Button(
-            onClick = {
-                val listas = getListFromViewModel(viewModel)
-                listas.add(
-                    ListaCompra(
-                        nombre = nombre,
-                        dia_creacion = Date.from(Instant.now()),
-                        productos = ArrayList()
-                    )
-                )
-                viewModel.listas = MutableLiveData(listas)
-                navController.popBackStack()
-            },
-            modifier = Modifier.padding(top = 10.dp)
-        ) {
-            Text("Añadir Producto")
-        }
-    }
-}
-
-
-fun cargarListas(): ArrayList<ListaCompra> {
-    val listas = ArrayList<ListaCompra>()
-    val productos = listOf(
-        Producto(
-            nombre = "Manzanas",
-            precio = 1.99,
-            cantidad = 5,
-            categoria = "Frutas"
-        ),
-        Producto(
-            nombre = "Pan",
-            precio = 0.99,
-            cantidad = 2,
-            categoria = "Panadería"
-        ),
-        Producto(
-            nombre = "Leche",
-            precio = 2.49,
-            cantidad = 1,
-            categoria = "Lácteos"
-        )
-    )
-    listas.add(
-        ListaCompra(
-            nombre = "Lista de la compra de la cena",
-            dia_creacion = Date.from(Instant.now()),
-            productos = productos
-        )
-    )
-    return listas
-}
-
-fun getListFromViewModel(viewModel: ListasCompraViewModel): ArrayList<ListaCompra> {
-    if (viewModel.listas.value === null) {
-        viewModel.listas = MutableLiveData(cargarListas())
-    }
-
-    return viewModel.listas.value as ArrayList<ListaCompra>
-}
-

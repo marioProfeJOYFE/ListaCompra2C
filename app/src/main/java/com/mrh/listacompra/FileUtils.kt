@@ -17,7 +17,7 @@ object FileUtils {
             val listType: Type = object : TypeToken<List<ListaCompra>>() {}.type
             gson.fromJson<List<ListaCompra>>(jsonString, listType)
         } else {
-            emptyList()
+            ArrayList(emptyList())
         }
     }
 
@@ -35,6 +35,15 @@ object FileUtils {
         val file = File(context.cacheDir, "listas.json")
         val listas = recuperarListasCompra(context).toMutableList()
         listas.remove(lista)
+        val jsonString = gson.toJson(listas)
+        file.writeText(jsonString)
+    }
+
+    fun agregarProducto(context: Context, lista: ListaCompra, posicion: Int) {
+        val gson = Gson()
+        val file = File(context.cacheDir, "listas.json")
+        val listas = recuperarListasCompra(context).toMutableList()
+        listas[posicion].productos = lista.productos
         val jsonString = gson.toJson(listas)
         file.writeText(jsonString)
     }
