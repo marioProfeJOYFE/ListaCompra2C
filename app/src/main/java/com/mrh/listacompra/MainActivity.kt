@@ -273,7 +273,6 @@ class MainActivity : ComponentActivity() {
         viewModel: ListasCompraViewModel,
         lista: ListaCompra
     ) {
-        var productos by remember { mutableStateOf(lista.productos) }
         var busqueda by remember { mutableStateOf("") }
         var selectedCategories by remember { mutableStateOf(setOf<String>()) }
         Column(
@@ -335,12 +334,10 @@ class MainActivity : ComponentActivity() {
                 Icon(imageVector = Icons.Filled.Add, contentDescription = "")
                 Text(text = "Añadir lista")
             }
-            if(selectedCategories.isNotEmpty()){
-                productos = lista.productos.filter { it.categoria in selectedCategories }
-            }
-            productos.filter { producto ->
+
+            lista.productos.filter { producto ->
                 producto.nombre.uppercase().contains(busqueda.uppercase())
-            }.forEach { producto ->
+            }.filter { if(selectedCategories.isNotEmpty()) it.categoria in selectedCategories else true }.forEach { producto ->
                 ProductoCard(producto = producto)
             }
         }
