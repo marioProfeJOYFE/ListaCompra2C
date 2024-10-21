@@ -5,6 +5,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -20,6 +21,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.Checkbox
@@ -27,6 +29,8 @@ import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -68,6 +72,8 @@ import java.text.SimpleDateFormat
 import java.time.Instant
 
 class MainActivity : ComponentActivity() {
+
+    val categorias: List<String> = listOf(Categoria.FRUTERIA.nombre, Categoria.CARNICERIA.nombre, Categoria.POLLERIA.nombre, Categoria.PESCADERIA.nombre, Categoria.VERDULERIA.nombre, Categoria.OTROS.nombre, Categoria.LIMPIEZA.nombre, Categoria.HIGINE.nombre, Categoria.LACTEOS.nombre, Categoria.BOLLLERIA.nombre)
 
     @OptIn(ExperimentalMaterial3Api::class)
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -267,7 +273,9 @@ class MainActivity : ComponentActivity() {
         viewModel: ListasCompraViewModel,
         lista: ListaCompra
     ) {
+        var productos by remember { mutableStateOf(lista.productos) }
         var busqueda by remember { mutableStateOf("") }
+        var selectedCategories by remember { mutableStateOf(setOf<String>()) }
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -285,6 +293,31 @@ class MainActivity : ComponentActivity() {
                     .fillMaxWidth()
                     .padding(bottom = 18.dp)
             )
+            Row(modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState())){
+                categorias.forEach{ category ->
+                    var selected by remember { mutableStateOf(false) }
+                    FilterChip(
+                        onClick = {
+                            selectedCategories = if (category in selectedCategories) {
+                                selectedCategories - category
+                            } else {
+                                selectedCategories + category
+                            }
+                        },
+                        label = { Text(category) },
+                        selected = category in selectedCategories,
+                        modifier = Modifier.padding(end = 4.dp),
+                        colors = FilterChipDefaults.filterChipColors(
+                            containerColor = if(category in selectedCategories) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface,
+                        ),
+                        trailingIcon = {
+                            if (category in selectedCategories) {
+                                Icon(Icons.Filled.Clear, "")
+                            }
+                        }
+                    )
+                }
+            }
             FilledTonalButton(
                 onClick = {
                     navController.navigate(
@@ -302,12 +335,20 @@ class MainActivity : ComponentActivity() {
                 Icon(imageVector = Icons.Filled.Add, contentDescription = "")
                 Text(text = "Añadir lista")
             }
-            lista.productos.filter { producto ->
+            if(selectedCategories.isNotEmpty()){
+                productos = lista.productos.filter { it.categoria in selectedCategories }
+            }
+            productos.filter { producto ->
                 producto.nombre.uppercase().contains(busqueda.uppercase())
             }.forEach { producto ->
                 ProductoCard(producto = producto)
             }
         }
+
+    }
+
+    @Composable
+    fun ListaBotonesFiltro(selectedCategories: Set<String>) {
 
     }
 
@@ -370,8 +411,6 @@ class MainActivity : ComponentActivity() {
         var categoria by remember { mutableStateOf("") }
         var mostrarLista by remember { mutableStateOf(false) }
         var mTextFieldSize by remember { mutableStateOf(Size.Zero) }
-        val listaCategoria: List<String> =
-            listOf("Fruteria", "Charcuteria", "Polleria", "Pescaderia")
 
         Column(
             modifier = Modifier.fillMaxSize(),
@@ -452,7 +491,7 @@ class MainActivity : ComponentActivity() {
                         modifier = Modifier
                             .width(with(LocalDensity.current) { mTextFieldSize.width.toDp() })
                     ) {
-                        listaCategoria.forEach { label ->
+                        categorias.forEach { label ->
                             DropdownMenuItem(
                                 onClick = {
                                     categoria = label
