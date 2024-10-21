@@ -73,7 +73,18 @@ import java.time.Instant
 
 class MainActivity : ComponentActivity() {
 
-    val categorias: List<String> = listOf(Categoria.FRUTERIA.nombre, Categoria.CARNICERIA.nombre, Categoria.POLLERIA.nombre, Categoria.PESCADERIA.nombre, Categoria.VERDULERIA.nombre, Categoria.OTROS.nombre, Categoria.LIMPIEZA.nombre, Categoria.HIGINE.nombre, Categoria.LACTEOS.nombre, Categoria.BOLLLERIA.nombre)
+    val categorias: List<String> = listOf(
+        Categoria.FRUTERIA.nombre,
+        Categoria.CARNICERIA.nombre,
+        Categoria.POLLERIA.nombre,
+        Categoria.PESCADERIA.nombre,
+        Categoria.VERDULERIA.nombre,
+        Categoria.OTROS.nombre,
+        Categoria.LIMPIEZA.nombre,
+        Categoria.HIGINE.nombre,
+        Categoria.LACTEOS.nombre,
+        Categoria.BOLLLERIA.nombre
+    )
 
     @OptIn(ExperimentalMaterial3Api::class)
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -292,9 +303,12 @@ class MainActivity : ComponentActivity() {
                     .fillMaxWidth()
                     .padding(bottom = 18.dp)
             )
-            Row(modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState())){
-                categorias.forEach{ category ->
-                    var selected by remember { mutableStateOf(false) }
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .horizontalScroll(rememberScrollState())
+            ) {
+                categorias.forEach { category ->
                     FilterChip(
                         onClick = {
                             selectedCategories = if (category in selectedCategories) {
@@ -307,7 +321,7 @@ class MainActivity : ComponentActivity() {
                         selected = category in selectedCategories,
                         modifier = Modifier.padding(end = 4.dp),
                         colors = FilterChipDefaults.filterChipColors(
-                            containerColor = if(category in selectedCategories) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface,
+                            containerColor = if (category in selectedCategories) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface,
                         ),
                         trailingIcon = {
                             if (category in selectedCategories) {
@@ -337,15 +351,12 @@ class MainActivity : ComponentActivity() {
 
             lista.productos.filter { producto ->
                 producto.nombre.uppercase().contains(busqueda.uppercase())
-            }.filter { if(selectedCategories.isNotEmpty()) it.categoria in selectedCategories else true }.forEach { producto ->
-                ProductoCard(producto = producto)
             }
+                .filter { if (selectedCategories.isNotEmpty()) it.categoria in selectedCategories else true }
+                .forEach { producto ->
+                    ProductoCard(producto = producto)
+                }
         }
-
-    }
-
-    @Composable
-    fun ListaBotonesFiltro(selectedCategories: Set<String>) {
 
     }
 
@@ -567,7 +578,6 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
-
 
     fun cargarListas(): ArrayList<ListaCompra> {
         val listas = ArrayList<ListaCompra>()
