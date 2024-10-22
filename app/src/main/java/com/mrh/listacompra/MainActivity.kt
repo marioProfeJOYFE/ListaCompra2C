@@ -14,6 +14,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
@@ -38,6 +41,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TopAppBar
@@ -55,6 +61,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.unit.toSize
@@ -214,6 +221,7 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    @OptIn(ExperimentalMaterial3Api::class)
     @SuppressLint("SimpleDateFormat")
     @Composable
     fun ListasView(
@@ -222,14 +230,15 @@ class MainActivity : ComponentActivity() {
     ) {
         var busqueda by remember { mutableStateOf("") }
         val listas = getListFromViewModel(viewModel)
+        val options = mutableListOf<GridTypes>(GridTypes.FILAS, GridTypes.GRID)
+        var selectedIndex by remember { mutableStateOf(0) }
         Column(
             modifier = Modifier
-                .verticalScroll(rememberScrollState())
                 .fillMaxSize()
                 .padding(16.dp),
-            verticalArrangement = Arrangement.Top,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
+
             TextField(
                 value = busqueda,
                 onValueChange = {
@@ -240,40 +249,123 @@ class MainActivity : ComponentActivity() {
                     .fillMaxWidth()
                     .padding(bottom = 8.dp)
             )
+
+
+            SingleChoiceSegmentedButtonRow {
+                options.forEachIndexed { index, option ->
+                    val selected = selectedIndex == index
+                    SegmentedButton(
+                        selected = selected,
+                        onClick = {
+                            selectedIndex = index
+                        },
+                        label = { Text(option.title) },
+                        shape = SegmentedButtonDefaults.itemShape(
+                            index = index,
+                            count = options.size
+                        ),
+                        icon = {
+                            Icon(imageVector = option.icon, "")
+                        }
+                    )
+                }
+            }
+
             if (listas.isEmpty()) {
                 Text("No hay listas")
+
             } else {
-                listas.filter { lista -> lista.nombre.uppercase().contains(busqueda.uppercase()) }
-                    .forEach { lista ->
-                        Card(
-                            modifier = Modifier
-                                .padding(top = 8.dp, bottom = 8.dp)
-                                .fillMaxWidth()
-                                .height(100.dp),
-                            onClick = {
-                                navController.navigate("lista_compra_view/" + listas.indexOf(lista))
-                            }
-                        ) {
-                            Column(
+                when (selectedIndex) {
+                    0 -> Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .verticalScroll(rememberScrollState())
+                    ) {
+                        listas.filter { lista ->
+                            lista.nombre.uppercase().contains(busqueda.uppercase())
+                        }.forEach { lista ->
+                            Card(
                                 modifier = Modifier
-                                    .padding(16.dp)
-                                    .fillMaxSize(),
-                                horizontalAlignment = Alignment.Start,
-                                verticalArrangement = Arrangement.Center
-                            ) {
-                                Text(
-                                    text = lista.nombre,
-                                    fontSize = 18.sp,
-                                    fontWeight = FontWeight.ExtraBold
-                                )
-                                Text(
-                                    text = "Creado el: " + SimpleDateFormat("dd/MM/yyyy").format(
-                                        lista.dia_creacion
+                                    .padding(top = 8.dp, bottom = 8.dp)
+                                    .fillMaxWidth()
+                                    .height(100.dp),
+                                onClick = {
+                                    navController.navigate(
+                                        "lista_compra_view/" + listas.indexOf(
+                                            lista
+                                        )
                                     )
-                                )
+                                }
+                            ) {
+                                Column(
+                                    modifier = Modifier
+                                        .padding(16.dp)
+                                        .fillMaxSize(),
+                                    horizontalAlignment = Alignment.Start,
+                                    verticalArrangement = Arrangement.Center
+                                ) {
+                                    Text(
+                                        text = lista.nombre,
+                                        fontSize = 18.sp,
+                                        fontWeight = FontWeight.ExtraBold
+                                    )
+                                    Text(
+                                        text = "Creado el: " + SimpleDateFormat("dd/MM/yyyy").format(
+                                            lista.dia_creacion
+                                        )
+                                    )
+                                }
+                            }
+                        }
+
+                    }
+
+                    1 -> LazyVerticalGrid(
+                        columns = GridCells.FixedSize(180.dp),
+                        horizontalArrangement = Arrangement.SpaceAround
+
+                    ) {
+                        items(listas.filter { lista ->
+                            lista.nombre.uppercase().contains(busqueda.uppercase())
+                        }) { lista ->
+                            Card(
+                                modifier = Modifier
+                                    .padding(top = 8.dp, bottom = 8.dp)
+                                    .fillMaxWidth()
+                                    .height(100.dp),
+                                onClick = {
+                                    navController.navigate(
+                                        "lista_compra_view/" + listas.indexOf(
+                                            lista
+                                        )
+                                    )
+                                }
+                            ) {
+                                Column(
+                                    modifier = Modifier
+                                        .padding(16.dp)
+                                        .fillMaxSize(),
+                                    horizontalAlignment = Alignment.Start,
+                                    verticalArrangement = Arrangement.Center
+                                ) {
+                                    Text(
+                                        text = lista.nombre,
+                                        fontSize = 18.sp,
+                                        fontWeight = FontWeight.ExtraBold,
+                                        softWrap = false,
+                                        overflow = TextOverflow.Ellipsis
+                                    )
+                                    Text(
+                                        text = "Creado el: " + SimpleDateFormat("dd/MM/yyyy").format(
+                                            lista.dia_creacion
+                                        )
+                                    )
+                                }
                             }
                         }
                     }
+                }
+
             }
         }
     }
