@@ -50,6 +50,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -80,7 +81,7 @@ import java.time.Instant
 
 class MainActivity : ComponentActivity() {
 
-    val categorias: List<String> = listOf(
+    private val categorias: List<String> = listOf(
         Categoria.FRUTERIA.nombre,
         Categoria.CARNICERIA.nombre,
         Categoria.POLLERIA.nombre,
@@ -230,8 +231,8 @@ class MainActivity : ComponentActivity() {
     ) {
         var busqueda by remember { mutableStateOf("") }
         val listas = getListFromViewModel(viewModel)
-        val options = mutableListOf<GridTypes>(GridTypes.FILAS, GridTypes.GRID)
-        var selectedIndex by remember { mutableStateOf(0) }
+        val options = mutableListOf(GridTypes.FILAS, GridTypes.GRID)
+        var selectedIndex by remember { mutableIntStateOf(0) }
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -321,9 +322,8 @@ class MainActivity : ComponentActivity() {
                     }
 
                     1 -> LazyVerticalGrid(
-                        columns = GridCells.FixedSize(180.dp),
-                        horizontalArrangement = Arrangement.SpaceAround
-
+                        columns = GridCells.Fixed(2),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
                         items(listas.filter { lista ->
                             lista.nombre.uppercase().contains(busqueda.uppercase())
@@ -703,7 +703,7 @@ class MainActivity : ComponentActivity() {
         return listas
     }
 
-    fun getListFromViewModel(viewModel: ListasCompraViewModel): ArrayList<ListaCompra> {
+    private fun getListFromViewModel(viewModel: ListasCompraViewModel): ArrayList<ListaCompra> {
         if (viewModel.listas.value === null) {
             viewModel.listas = MutableLiveData(FileUtils.recuperarListasCompra(this))
         }
